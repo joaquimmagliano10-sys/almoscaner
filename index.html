@@ -128,10 +128,20 @@
     gap:12px;
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
+  @media (min-width: 768px){
+    .productsGrid{
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+    }
+  }
   @media (max-width: 480px){
     .productsGrid{
-      grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-      gap: 4px !important;
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
     }
     .productsGrid .cardImg{
       height: 20px !important;
@@ -2553,4 +2563,5 @@ highlightDrawer(state.mobileView);
 
 </body>
 </html>
+
 
