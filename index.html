@@ -294,17 +294,13 @@
   }
 
   @media (max-width: 760px){
-    .productsGrid.compact5 .barcodeDisplay{
-      transform: scale(0.6);
-      margin: 4px 0;
-      padding: 2px;
-    }
-    .productsGrid.compact5 .barcodeDisplay div:first-child{
-      transform: scale(0.5);
-    }
-    .productsGrid.compact5 .barcodeDisplay div:last-child{
-      font-size: 7px;
-      margin-top: 1px;
+    .productsGrid.compact5 .meta .mono:last-child{
+      font-size: 8px;
+      display: block;
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 
@@ -838,6 +834,41 @@
 /* ================== BARCODE GENERATOR ================== */
 // Cache for generated barcodes to improve performance
 const barcodeCache = new Map();
+// Secret key for signature generation
+const SECRET_KEY = 'ALMOX_SECRET_2024';
+
+function generateSignedBarcode(productId) {
+  // Generate signed barcode: ALMOX-{ID}-{CHECKSUM}
+  const base = `ALMOX-${productId}`;
+  const checksum = generateChecksum(productId + SECRET_KEY);
+  return `${base}-${checksum}`;
+}
+
+function generateChecksum(text) {
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    const char = text.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash).toString(16).toUpperCase().padStart(4, '0');
+}
+
+function validateSignedBarcode(code) {
+  if (!code || typeof code !== 'string') return false;
+  
+  const normalized = code.trim().toUpperCase();
+  
+  // Check if it matches our format: ALMOX-PXXXXXX-XXXX
+  const match = normalized.match(/^ALMOX-(P\d{6})-([A-F0-9]{4})$/);
+  if (!match) return false;
+  
+  const productId = match[1];
+  const providedChecksum = match[2];
+  const expectedChecksum = generateChecksum(productId + SECRET_KEY);
+  
+  return providedChecksum === expectedChecksum ? productId : false;
+}
 
 function generateCode39Barcode(text) {
   // Check cache first
@@ -962,7 +993,7 @@ async function iniciarCameraScan() {
     btnStop.style.display = 'inline-block';
     
     if (!barcodeDetector) {
-      showScannerStatus('BarcodeDetector não suportado neste dispositivo. Câmera ativa para visualização manual.', 'error');
+      showScannerStatus('Leitura automática não suportada neste dispositivo. Use leitor USB ou digite o código.', 'error');
       return;
     }
     
@@ -1047,10 +1078,17 @@ function hideScannerStatus() {
 }
 
 function buscarPorCodigoDeBarras(codigo) {
-  // Only search within the site's products (local database)
-  const product = state.produtos.find(p => 
-    (p.barcode && p.barcode === codigo) || p.id === codigo
-  );
+  // Normalize and validate signed barcode
+  const normalized = codigo.trim().toUpperCase();
+  const productId = validateSignedBarcode(normalized);
+  
+  if (!productId) {
+    showScannerStatus('Este código não pertence a este sistema.', 'error');
+    return;
+  }
+  
+  // Search for the product by ID
+  const product = state.produtos.find(p => p.id === productId);
   
   if (product) {
     showScannerStatus(`Produto encontrado: ${product.nome}`, 'success');
@@ -1059,7 +1097,7 @@ function buscarPorCodigoDeBarras(codigo) {
       abrirMobilePagina('itens');
       setTimeout(() => abrirItemModal(product.id), 300);
     } else {
-      document.getElementById('busca').value = codigo;
+      document.getElementById('busca').value = productId;
       renderProdutos();
       
       setTimeout(() => {
@@ -1072,7 +1110,7 @@ function buscarPorCodigoDeBarras(codigo) {
       }, 100);
     }
   } else {
-    showScannerStatus(`Código não pertence a este sistema`, 'error');
+    showScannerStatus('Não encontrado no sistema.', 'error');
   }
 }
 
@@ -1108,13 +1146,18 @@ function carregar(){
       state.lastId = state.lastId || 0;
       state.mobileView = state.mobileView || "principal";
       
-      // Migrate old products to have barcodes
+      // Migrate old products to have signed barcodes
+      let needsSave = false;
       state.produtos.forEach(p => {
-        if (!p.barcode) {
-          p.barcode = p.id;
+        if (!p.barcode || !p.barcode.startsWith('ALMOX-')) {
+          p.barcode = generateSignedBarcode(p.id);
+          needsSave = true;
         }
       });
-      salvar();
+      
+      if (needsSave) {
+        salvar();
+      }
     }catch(e){}
   }
 }
@@ -1494,6 +1537,9 @@ function abrirItemModal(id){
           <span class="badge">${escapeHtml(p.categoria)}</span>
           <span class="mono">${escapeHtml(p.id)}</span>
         </div>
+        <div class="meta" style="margin-top:4px;">
+          <span style="font-size:11px; color:#666; font-family:monospace;">Código: ${escapeHtml(p.barcode)}</span>
+        </div>
         <div class="meta">
           <span>Unidade: ${escapeHtml(un)}</span>
           <span>Cadastro: ${escapeHtml(p.unidade || "un")}</span>
@@ -1508,6 +1554,29 @@ function abrirItemModal(id){
         </div>
 
         <div class="hint" style="margin-top:10px;">Atualizado: ${escapeHtml(p.updatedAt || "-")}</div>
+        
+        <!-- Label Preview Section -->
+        <div style="margin-top:16px; border:1px solid var(--border); border-radius:8px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h5 style="margin:0; font-size:14px; font-weight:900;">🏷️ Visualizar Etiqueta</h5>
+            <button class="ghost" onclick="toggleLabelPreview()" id="btnToggleLabel">Expandir</button>
+          </div>
+          <div id="labelPreview" style="display:none;">
+            <div style="background:#f9fafb; padding:8px; border-radius:6px; margin-bottom:8px;">
+              <div style="font-weight:bold; font-size:10px; margin-bottom:2px;">${escapeHtml(p.nome)}</div>
+              <div style="font-size:8px; color:#666; margin-bottom:2px;">${escapeHtml(p.categoria || '')}</div>
+              <div style="font-size:8px; margin-bottom:4px;">ID: ${escapeHtml(p.id)}</div>
+              <div style="text-align:center; margin:8px 0;">
+                <div style="transform:scale(0.7); transform-origin:center;">${generateCode39Barcode(p.barcode)}</div>
+              </div>
+              <div style="font-size:6px; text-align:center; font-family:monospace; color:#333; margin-top:2px;">${escapeHtml(p.barcode)}</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button onclick="printProductLabel('${p.id}')" class="secondary">🖨️ Imprimir Etiqueta</button>
+              <button onclick="toggleLabelPreview()" class="ghost">Fechar</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -1517,14 +1586,33 @@ function abrirItemModal(id){
   document.getElementById("itemModalFooter").innerHTML = `
     <button class="ghost" onclick="entradaEstoque('${p.id}')">+ Entrada</button>
     <button class="ghost" onclick="saidaDiretaDoModal('${p.id}')">- Saída</button>
-    <button class="ghost" onclick="printProductLabel('${p.id}')">🏷️ Etiqueta</button>
     <button class="secondary" onclick="editarDiretoDoModal('${p.id}')">Editar</button>
     <button class="danger" onclick="excluirProduto('${p.id}'); fecharItemModal();">Excluir</button>
   `;
 
   document.getElementById("itemBackdrop").style.display = "flex";
 }
-function fecharItemModal(){ document.getElementById("itemBackdrop").style.display = "none"; }
+function fecharItemModal(){ 
+  document.getElementById("itemBackdrop").style.display = "none"; 
+  // Reset label preview when closing modal
+  const labelPreview = document.getElementById('labelPreview');
+  const toggleBtn = document.getElementById('btnToggleLabel');
+  if (labelPreview) labelPreview.style.display = 'none';
+  if (toggleBtn) toggleBtn.textContent = 'Expandir';
+}
+
+function toggleLabelPreview() {
+  const preview = document.getElementById('labelPreview');
+  const btn = document.getElementById('btnToggleLabel');
+  
+  if (preview.style.display === 'none') {
+    preview.style.display = 'block';
+    btn.textContent = 'Recolher';
+  } else {
+    preview.style.display = 'none';
+    btn.textContent = 'Expandir';
+  }
+}
 
 /* ✅ WRAPPERS: fecha a tela do produto e abre a próxima */
 function saidaDiretaDoModal(id){
@@ -1719,8 +1807,8 @@ async function cadastrarProduto(){
     updatedAt: nowISO()
   };
   
-  // Set barcode to be the same as ID
-  prod.barcode = prod.id;
+  // Set signed barcode
+  prod.barcode = generateSignedBarcode(prod.id);
 
   const finalizar = () => {
     state.produtos.push(prod);
@@ -1738,13 +1826,6 @@ async function cadastrarProduto(){
     atualizarDatalistCategorias();
     atualizarTudo();
     limparCampos();
-    
-    // Ask if user wants to print label
-    setTimeout(() => {
-      if (confirm(`Produto "${prod.nome}" cadastrado com sucesso!\nDeseja imprimir a etiqueta 65x30mm agora?`)) {
-        printProductLabel(prod.id);
-      }
-    }, 100);
   };
 
   if(file){
@@ -2097,10 +2178,7 @@ function renderProdutos(){
         <div class="meta">
           <span class="badge">${escapeHtml(p.categoria)}</span>
           <span class="mono">${escapeHtml(p.id)}</span>
-        </div>
-        <div class="barcodeDisplay" style="text-align:center; margin:8px 0; padding:4px; background:#f9fafb; border-radius:6px;">
-          <div style="transform:scale(0.8); transform-origin:center; max-width:100%; overflow:hidden;">${generateCode39Barcode(p.barcode || p.id)}</div>
-          <div style="font-size:9px; font-family:monospace; color:#666; margin-top:2px;">${escapeHtml(p.barcode || p.id)}</div>
+          <span class="mono" style="font-size:10px; color:#666;">Cód: ${escapeHtml(p.barcode || p.id)}</span>
         </div>
         <div class="meta">
           <span>Unidade: ${escapeHtml(unidadeParaExibirProduto(p))}</span>
@@ -2413,4 +2491,5 @@ highlightDrawer(state.mobileView);
 
 </body>
 </html>
+
 
