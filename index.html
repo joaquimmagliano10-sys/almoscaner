@@ -131,22 +131,50 @@
   @media (max-width: 480px){
     .productsGrid{
       grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-      gap: 6px !important;
+      gap: 4px !important;
     }
     .productsGrid .cardImg{
-      height: 25px !important;
+      height: 20px !important;
     }
     .productsGrid .cardBody{
       padding: 2px !important;
     }
     .productsGrid .title{
-      display: none !important;
+      font-size: 7px !important;
+      line-height: 1.0 !important;
+      margin: 0 0 1px 0 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
     }
     .productsGrid .meta{
-      display: none !important;
+      font-size: 5px !important;
+      margin-top: 1px !important;
+      gap: 1px !important;
+      flex-wrap: nowrap !important;
+    }
+    .productsGrid .badge{
+      font-size: 4px !important;
+      padding: 1px 2px !important;
+    }
+    .productsGrid .mono{
+      font-size: 4px !important;
+    }
+    .productsGrid .meta .mono:last-child{
+      font-size: 4px !important;
+      display: block !important;
+      margin-top: 0px !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
     }
     .productsGrid .stock{
-      display: none !important;
+      margin-top: 1px !important;
+      padding: 1px !important;
+      gap: 1px !important;
+    }
+    .productsGrid .stock strong{
+      font-size: 6px !important;
     }
     .productsGrid .hint{
       display: none !important;
@@ -2525,5 +2553,4 @@ highlightDrawer(state.mobileView);
 
 </body>
 </html>
-
 
