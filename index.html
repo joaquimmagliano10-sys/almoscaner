@@ -305,11 +305,18 @@
       position: absolute;
       left: 0;
       top: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+    }
+    #printContainer > div {
       width: 65mm;
       height: 30mm;
-      margin: 0;
-      padding: 2mm;
-      box-sizing: border-box;
       page-break-after: always;
     }
     @page {
@@ -872,20 +879,26 @@ function printProductLabel(productId) {
   
   const barcodeSvg = generateCode39Barcode(product.barcode || product.id);
   
-  const labelHtml = `
-    <div style="width: 61mm; height: 26mm; padding: 2mm; font-family: Arial, sans-serif; border: 1px solid #ccc;">
-      <div style="font-weight: bold; font-size: 10px; margin-bottom: 1mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(product.nome)}</div>
-      <div style="font-size: 8px; color: #666; margin-bottom: 1mm;">${escapeHtml(product.categoria || '')}</div>
-      <div style="font-size: 8px; margin-bottom: 2mm;">ID: ${escapeHtml(product.id)}</div>
-      <div style="text-align: center; height: 12mm; display: flex; align-items: center; justify-content: center;">
+  // Create print container with proper styling
+  const printContainer = document.getElementById('printContainer');
+  printContainer.innerHTML = `
+    <div style="width: 65mm; height: 30mm; padding: 2mm; font-family: Arial, sans-serif; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between;">
+      <div style="font-weight: bold; font-size: 8px; margin-bottom: 1mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(product.nome)}</div>
+      <div style="font-size: 6px; color: #666; margin-bottom: 1mm;">${escapeHtml(product.categoria || '')}</div>
+      <div style="font-size: 6px; margin-bottom: 1mm;">ID: ${escapeHtml(product.id)}</div>
+      <div style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 12mm;">
         ${barcodeSvg}
       </div>
     </div>
   `;
   
-  document.getElementById('printContainer').innerHTML = labelHtml;
+  // Trigger print
   window.print();
-  document.getElementById('printContainer').innerHTML = '';
+  
+  // Clear container after printing
+  setTimeout(() => {
+    printContainer.innerHTML = '';
+  }, 100);
 }
 
 /* ================== BARCODE SCANNER ================== */
@@ -903,16 +916,12 @@ function initBarcodeDetector() {
 }
 
 async function iniciarCameraScan() {
-  if (!barcodeDetector) {
-    showScannerStatus('BarcodeDetector não suportado neste navegador', 'error');
-    return;
-  }
-  
   try {
     const video = document.getElementById('scannerVideo');
     const btnStart = document.getElementById('btnStartCamera');
     const btnStop = document.getElementById('btnStopCamera');
     
+    // Request camera permission first
     scannerStream = await navigator.mediaDevices.getUserMedia({ 
       video: { facingMode: 'environment' } 
     });
@@ -924,8 +933,12 @@ async function iniciarCameraScan() {
     btnStart.style.display = 'none';
     btnStop.style.display = 'inline-block';
     
-    showScannerStatus('Procurando códigos...', 'waiting');
+    if (!barcodeDetector) {
+      showScannerStatus('BarcodeDetector não suportado neste dispositivo. Câmera ativa para visualização manual.', 'error');
+      return;
+    }
     
+    showScannerStatus('Procurando códigos...', 'waiting');
     scanContinuously();
   } catch (error) {
     showScannerStatus('Erro ao acessar câmera: ' + error.message, 'error');
@@ -934,7 +947,16 @@ async function iniciarCameraScan() {
 
 async function scanContinuously() {
   const video = document.getElementById('scannerVideo');
-  if (!video.srcObject || !barcodeDetector) return;
+  if (!video.srcObject) return;
+  
+  // Only scan if BarcodeDetector is supported
+  if (!barcodeDetector) {
+    // Just keep camera active for manual viewing
+    if (scannerStream) {
+      setTimeout(() => scanContinuously(), 100);
+    }
+    return;
+  }
   
   try {
     const barcodes = await barcodeDetector.detect(video);
@@ -959,7 +981,13 @@ async function scanContinuously() {
 
 function pararCameraScan() {
   if (scannerStream) {
-    scannerStream.getTracks().forEach(track => track.stop());
+    scannerStream.getTracks().forEach(track => {
+      try {
+        track.stop();
+      } catch (e) {
+        console.log('Error stopping track:', e);
+      }
+    });
     scannerStream = null;
   }
   
@@ -967,11 +995,13 @@ function pararCameraScan() {
   const btnStart = document.getElementById('btnStartCamera');
   const btnStop = document.getElementById('btnStopCamera');
   
-  video.style.display = 'none';
-  video.srcObject = null;
+  if (video) {
+    video.style.display = 'none';
+    video.srcObject = null;
+  }
   
-  btnStart.style.display = 'inline-block';
-  btnStop.style.display = 'none';
+  if (btnStart) btnStart.style.display = 'inline-block';
+  if (btnStop) btnStop.style.display = 'none';
   
   hideScannerStatus();
 }
@@ -2351,4 +2381,3 @@ highlightDrawer(state.mobileView);
 
 </body>
 </html>
-
