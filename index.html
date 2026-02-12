@@ -122,79 +122,7 @@
   .kpi .label{ color:var(--muted); font-size:12px; }
   .kpi .value{ font-size:22px; font-weight:900; margin-top:6px; }
 
-  /* ================== RESPONSIVE GRID ================== */
-  .productsGrid{
-    display:grid;
-    gap:12px;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-  @media (min-width: 768px){
-    .productsGrid{
-      margin-top: 14px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 12px;
-    }
-  }
-  @media (max-width: 480px){
-    .productsGrid{
-      margin-top: 14px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 8px;
-    }
-    .productsGrid .cardImg{
-      height: 65px !important;
-    }
-    .productsGrid .cardBody{
-      padding: 6px !important;
-    }
-    .productsGrid .title{
-      font-size: 11px !important;
-      line-height: 1.2 !important;
-      margin: 0 0 4px 0 !important;
-      white-space: nowrap !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-    }
-    .productsGrid .meta{
-      font-size: 9px !important;
-      margin-top: 4px !important;
-      gap: 4px !important;
-      flex-wrap: wrap !important;
-    }
-    .productsGrid .badge{
-      font-size: 8px !important;
-      padding: 2px 6px !important;
-    }
-    .productsGrid .mono{
-      font-size: 8px !important;
-    }
-    .productsGrid .meta .mono:last-child{
-      font-size: 8px !important;
-      display: block !important;
-      margin-top: 2px !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      white-space: nowrap !important;
-    }
-    .productsGrid .stock{
-      margin-top: 6px !important;
-      padding: 4px !important;
-      gap: 4px !important;
-    }
-    .productsGrid .stock strong{
-      font-size: 10px !important;
-    }
-    .productsGrid .hint{
-      font-size: 8px !important;
-      margin-top: 4px !important;
-    }
-    .productsGrid .actions{
-      display: none !important;
-    }
-  }
-
+  .productsGrid{ margin-top:14px; display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px; }
   .card{ background:#fff; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
   .cardImg{ height:160px; background:#e9eef5; overflow:hidden; }
   .cardImg img{ width:100%; height:100%; object-fit:cover; display:block; }
@@ -365,38 +293,6 @@
     .productsGrid{ grid-template-columns:1fr; }
   }
 
-  @media (max-width: 480px){
-    .productsGrid .meta .mono:last-child{
-      font-size: 8px;
-      display: block;
-      margin-top: 2px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    
-    .productsGrid .cardBody{
-      padding: 8px;
-    }
-    
-    .productsGrid .title{
-      font-size: 11px;
-      line-height: 1.2;
-    }
-    
-    .productsGrid .meta{
-      font-size: 9px;
-    }
-    
-    .productsGrid .stock{
-      margin-top: 6px;
-    }
-    
-    .productsGrid .hint{
-      font-size: 8px;
-    }
-  }
-
   /* ================== PRINT LABEL STYLES ================== */
   @media print {
     body * {
@@ -486,6 +382,7 @@
     .productsGrid.compact5 .title{
       font-size: 12px !important;
       line-height: 1.1;
+      margin: 0;
     }
     .productsGrid.compact5 .meta,
     .productsGrid.compact5 .stock,
@@ -924,50 +821,7 @@
 
 <script>
 /* ================== BARCODE GENERATOR ================== */
-// Cache for generated barcodes to improve performance
-const barcodeCache = new Map();
-// Secret key for signature generation
-const SECRET_KEY = 'ALMOX_SECRET_2024';
-
-function generateSignedBarcode(productId) {
-  // Generate signed barcode: ALMOX-{ID}-{CHECKSUM}
-  const base = `ALMOX-${productId}`;
-  const checksum = generateChecksum(productId + SECRET_KEY);
-  return `${base}-${checksum}`;
-}
-
-function generateChecksum(text) {
-  let hash = 0;
-  for (let i = 0; i < text.length; i++) {
-    const char = text.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash).toString(16).toUpperCase().padStart(4, '0');
-}
-
-function validateSignedBarcode(code) {
-  if (!code || typeof code !== 'string') return false;
-  
-  const normalized = code.trim().toUpperCase();
-  
-  // Check if it matches our format: ALMOX-PXXXXXX-XXXX
-  const match = normalized.match(/^ALMOX-(P\d{6})-([A-F0-9]{4})$/);
-  if (!match) return false;
-  
-  const productId = match[1];
-  const providedChecksum = match[2];
-  const expectedChecksum = generateChecksum(productId + SECRET_KEY);
-  
-  return providedChecksum === expectedChecksum ? productId : false;
-}
-
 function generateCode39Barcode(text) {
-  // Check cache first
-  if (barcodeCache.has(text)) {
-    return barcodeCache.get(text);
-  }
-  
   const CODE39_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-.$/+%';
   const CODE39_PATTERNS = {
     '0': '101001101101', '1': '110100101011', '2': '101100101011', '3': '110110010101',
@@ -1015,9 +869,6 @@ function generateCode39Barcode(text) {
   svg += `<text x="${svgWidth/2}" y="${svgHeight - 2}" text-anchor="middle" font-family="monospace" font-size="12" fill="black">${cleanText}</text>`;
   svg += '</svg>';
   
-  // Cache the result
-  barcodeCache.set(text, svg);
-  
   return svg;
 }
 
@@ -1031,25 +882,23 @@ function printProductLabel(productId) {
   // Create print container with proper styling
   const printContainer = document.getElementById('printContainer');
   printContainer.innerHTML = `
-    <div style="width: 65mm; height: 30mm; padding: 2mm; font-family: Arial, sans-serif; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; background: white;">
+    <div style="width: 65mm; height: 30mm; padding: 2mm; font-family: Arial, sans-serif; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between;">
       <div style="font-weight: bold; font-size: 8px; margin-bottom: 1mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(product.nome)}</div>
       <div style="font-size: 6px; color: #666; margin-bottom: 1mm;">${escapeHtml(product.categoria || '')}</div>
       <div style="font-size: 6px; margin-bottom: 1mm;">ID: ${escapeHtml(product.id)}</div>
       <div style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 12mm;">
-        <div style="transform:scale(0.8); transform-origin:center;">${barcodeSvg}</div>
+        ${barcodeSvg}
       </div>
-      <div style="font-size: 5px; text-align: center; font-family: monospace; color: #333; margin-top: 1mm;">${escapeHtml(product.barcode || product.id)}</div>
     </div>
   `;
   
-  // Small delay to ensure content is rendered before print dialog
+  // Trigger print
+  window.print();
+  
+  // Clear container after printing
   setTimeout(() => {
-    window.print();
-    // Clear container after printing
-    setTimeout(() => {
-      printContainer.innerHTML = '';
-    }, 100);
-  }, 50);
+    printContainer.innerHTML = '';
+  }, 100);
 }
 
 /* ================== BARCODE SCANNER ================== */
@@ -1085,7 +934,7 @@ async function iniciarCameraScan() {
     btnStop.style.display = 'inline-block';
     
     if (!barcodeDetector) {
-      showScannerStatus('Leitura automática não suportada neste dispositivo. Use leitor USB ou digite o código.', 'error');
+      showScannerStatus('BarcodeDetector não suportado neste dispositivo. Câmera ativa para visualização manual.', 'error');
       return;
     }
     
@@ -1170,17 +1019,9 @@ function hideScannerStatus() {
 }
 
 function buscarPorCodigoDeBarras(codigo) {
-  // Normalize and validate signed barcode
-  const normalized = codigo.trim().toUpperCase();
-  const productId = validateSignedBarcode(normalized);
-  
-  if (!productId) {
-    showScannerStatus('Este código não pertence a este sistema.', 'error');
-    return;
-  }
-  
-  // Search for the product by ID
-  const product = state.produtos.find(p => p.id === productId);
+  const product = state.produtos.find(p => 
+    (p.barcode && p.barcode === codigo) || p.id === codigo
+  );
   
   if (product) {
     showScannerStatus(`Produto encontrado: ${product.nome}`, 'success');
@@ -1189,7 +1030,7 @@ function buscarPorCodigoDeBarras(codigo) {
       abrirMobilePagina('itens');
       setTimeout(() => abrirItemModal(product.id), 300);
     } else {
-      document.getElementById('busca').value = productId;
+      document.getElementById('busca').value = codigo;
       renderProdutos();
       
       setTimeout(() => {
@@ -1202,7 +1043,7 @@ function buscarPorCodigoDeBarras(codigo) {
       }, 100);
     }
   } else {
-    showScannerStatus('Não encontrado no sistema.', 'error');
+    showScannerStatus(`Produto não encontrado: ${codigo}`, 'error');
   }
 }
 
@@ -1238,18 +1079,13 @@ function carregar(){
       state.lastId = state.lastId || 0;
       state.mobileView = state.mobileView || "principal";
       
-      // Migrate old products to have signed barcodes
-      let needsSave = false;
+      // Migrate old products to have barcodes
       state.produtos.forEach(p => {
-        if (!p.barcode || !p.barcode.startsWith('ALMOX-')) {
-          p.barcode = generateSignedBarcode(p.id);
-          needsSave = true;
+        if (!p.barcode) {
+          p.barcode = p.id;
         }
       });
-      
-      if (needsSave) {
-        salvar();
-      }
+      salvar();
     }catch(e){}
   }
 }
@@ -1598,6 +1434,7 @@ function aplicarLayoutMobile(){
     if(lista) lista.style.display = "grid";
     if(dash) dash.style.display = "block";
 
+    if(lista) lista.classList.remove("compact5");
     setTab("estoque");
     toggleDrawer(false);
   }
@@ -1605,6 +1442,9 @@ function aplicarLayoutMobile(){
 window.addEventListener("resize", aplicarLayoutMobile);
 
 /* ================== ITENS COMPACTOS + MODAL ITEM ================== */
+function isMobileItensView(){
+  return isMobile() && (state.mobileView === "itens");
+}
 function abrirItemModal(id){
   const p = state.produtos.find(x=>x.id===id);
   if(!p) return;
@@ -1625,9 +1465,6 @@ function abrirItemModal(id){
           <span class="badge">${escapeHtml(p.categoria)}</span>
           <span class="mono">${escapeHtml(p.id)}</span>
         </div>
-        <div class="meta" style="margin-top:4px;">
-          <span style="font-size:11px; color:#666; font-family:monospace;">Código: ${escapeHtml(p.barcode)}</span>
-        </div>
         <div class="meta">
           <span>Unidade: ${escapeHtml(un)}</span>
           <span>Cadastro: ${escapeHtml(p.unidade || "un")}</span>
@@ -1642,29 +1479,6 @@ function abrirItemModal(id){
         </div>
 
         <div class="hint" style="margin-top:10px;">Atualizado: ${escapeHtml(p.updatedAt || "-")}</div>
-        
-        <!-- Label Preview Section -->
-        <div style="margin-top:16px; border:1px solid var(--border); border-radius:8px; padding:12px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <h5 style="margin:0; font-size:14px; font-weight:900;">🏷️ Visualizar Etiqueta</h5>
-            <button class="ghost" onclick="toggleLabelPreview()" id="btnToggleLabel">Expandir</button>
-          </div>
-          <div id="labelPreview" style="display:none;">
-            <div style="background:#f9fafb; padding:8px; border-radius:6px; margin-bottom:8px;">
-              <div style="font-weight:bold; font-size:10px; margin-bottom:2px;">${escapeHtml(p.nome)}</div>
-              <div style="font-size:8px; color:#666; margin-bottom:2px;">${escapeHtml(p.categoria || '')}</div>
-              <div style="font-size:8px; margin-bottom:4px;">ID: ${escapeHtml(p.id)}</div>
-              <div style="text-align:center; margin:8px 0;">
-                <div style="transform:scale(0.7); transform-origin:center;">${generateCode39Barcode(p.barcode)}</div>
-              </div>
-              <div style="font-size:6px; text-align:center; font-family:monospace; color:#333; margin-top:2px;">${escapeHtml(p.barcode)}</div>
-            </div>
-            <div style="display:flex; gap:8px;">
-              <button onclick="printProductLabel('${p.id}')" class="secondary">🖨️ Imprimir Etiqueta</button>
-              <button onclick="toggleLabelPreview()" class="ghost">Fechar</button>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   `;
@@ -1674,33 +1488,14 @@ function abrirItemModal(id){
   document.getElementById("itemModalFooter").innerHTML = `
     <button class="ghost" onclick="entradaEstoque('${p.id}')">+ Entrada</button>
     <button class="ghost" onclick="saidaDiretaDoModal('${p.id}')">- Saída</button>
+    <button class="ghost" onclick="printProductLabel('${p.id}')">🏷️ Etiqueta</button>
     <button class="secondary" onclick="editarDiretoDoModal('${p.id}')">Editar</button>
     <button class="danger" onclick="excluirProduto('${p.id}'); fecharItemModal();">Excluir</button>
   `;
 
   document.getElementById("itemBackdrop").style.display = "flex";
 }
-function fecharItemModal(){ 
-  document.getElementById("itemBackdrop").style.display = "none"; 
-  // Reset label preview when closing modal
-  const labelPreview = document.getElementById('labelPreview');
-  const toggleBtn = document.getElementById('btnToggleLabel');
-  if (labelPreview) labelPreview.style.display = 'none';
-  if (toggleBtn) toggleBtn.textContent = 'Expandir';
-}
-
-function toggleLabelPreview() {
-  const preview = document.getElementById('labelPreview');
-  const btn = document.getElementById('btnToggleLabel');
-  
-  if (preview.style.display === 'none') {
-    preview.style.display = 'block';
-    btn.textContent = 'Recolher';
-  } else {
-    preview.style.display = 'none';
-    btn.textContent = 'Expandir';
-  }
-}
+function fecharItemModal(){ document.getElementById("itemBackdrop").style.display = "none"; }
 
 /* ✅ WRAPPERS: fecha a tela do produto e abre a próxima */
 function saidaDiretaDoModal(id){
@@ -1895,8 +1690,8 @@ async function cadastrarProduto(){
     updatedAt: nowISO()
   };
   
-  // Set signed barcode
-  prod.barcode = generateSignedBarcode(prod.id);
+  // Set barcode to be the same as ID
+  prod.barcode = prod.id;
 
   const finalizar = () => {
     state.produtos.push(prod);
@@ -1914,6 +1709,13 @@ async function cadastrarProduto(){
     atualizarDatalistCategorias();
     atualizarTudo();
     limparCampos();
+    
+    // Ask if user wants to print label
+    setTimeout(() => {
+      if (confirm(`Produto "${prod.nome}" cadastrado com sucesso!\nDeseja imprimir a etiqueta 65x30mm agora?`)) {
+        printProductLabel(prod.id);
+      }
+    }, 100);
   };
 
   if(file){
@@ -2227,16 +2029,25 @@ function atualizarTudo(){
 /* ================== RENDER PRODUTOS ================== */
 function renderProdutos(){
   const termo = normLower(document.getElementById("busca").value);
-  const catFiltro = norm(document.getElementById("filtroCategoria").value);
-  const localFiltro = norm(document.getElementById("filtroLocal").value);
+  const filtroCat = normLower(document.getElementById("filtroCategoria").value);
+  const filtroLocal = normLower(document.getElementById("filtroLocal").value);
 
-  let lista = state.produtos.filter(p=>{
+  let lista = state.produtos.slice();
 
-    const matchBusca = !termo || normLower(p.nome).includes(termo) || normLower(p.id).includes(termo) || normLower(p.barcode || "").includes(termo);
-    const matchCat = !catFiltro || p.categoria === catFiltro;
-    const matchLocal = !localFiltro || (p.localizacao && normLower(p.localizacao).includes(normLower(localFiltro)));
-    return matchBusca && matchCat && matchLocal;
-  }).sort((a,b)=>{
+  if(filtroLocal){
+    lista = lista.filter(p => (p.localizacao || "").toLowerCase().includes(filtroLocal));
+  }
+  if(filtroCat){
+    lista = lista.filter(p => (p.categoria||"").toLowerCase().includes(filtroCat));
+  }
+  if(termo){
+    lista = lista.filter(p=>{
+      const s = `${p.id} ${p.nome} ${p.categoria} ${p.localizacao}`.toLowerCase();
+      return s.includes(termo);
+    });
+  }
+
+  lista.sort((a,b)=>{
     const c = (a.categoria||"").localeCompare(b.categoria||"");
     if(c!==0) return c;
     return (a.nome||"").localeCompare(b.nome||"");
@@ -2244,18 +2055,20 @@ function renderProdutos(){
 
   document.getElementById("contador").textContent = `Mostrando ${lista.length} de ${state.produtos.length} produto(s).`;
 
-  const el = document.getElementById("lista");
-  if(!el) return;
+  const grid = document.getElementById("lista");
+  if(grid){
+    grid.classList.toggle("compact5", isMobileItensView());
+  }
 
-  el.className = "productsGrid";
-  el.innerHTML = lista.map(p=>`
-    <div class="card" onclick="abrirItemModal('${p.id}')">
+  document.getElementById("lista").innerHTML = lista.map(p=>`
+    <div class="card" ${isMobileItensView() ? `onclick="abrirItemModal('${p.id}')"` : ""}>
       <div class="cardImg"><img src="${p.imagemBase64 || placeholderImg()}" alt="${escapeHtml(p.nome)}"></div>
       <div class="cardBody">
         <h4 class="title">${escapeHtml(p.nome)}</h4>
         <div class="meta">
           <span class="badge">${escapeHtml(p.categoria)}</span>
           <span class="mono">${escapeHtml(p.id)}</span>
+          <span class="mono" style="font-size:10px; color:#666;">Cód: ${escapeHtml(p.barcode || p.id)}</span>
         </div>
         <div class="meta">
           <span>Unidade: ${escapeHtml(unidadeParaExibirProduto(p))}</span>
@@ -2268,9 +2081,13 @@ function renderProdutos(){
             <div class="hint" style="margin-top:0">Estoque</div>
             <strong>${formatNumber(p.estoque)} ${escapeHtml(unidadeParaExibirProduto(p))}</strong>
           </div>
+          <div class="row" style="gap:8px">
+            <button class="ghost" onclick="event.stopPropagation(); entradaEstoque('${p.id}')">+ Entrada</button>
+            <button class="ghost" onclick="event.stopPropagation(); saidaEstoque('${p.id}')">- Saída</button>
+          </div>
         </div>
 
-        <div class="hint" style="margin-top:6px;">Atualizado: ${escapeHtml(p.updatedAt || "-")}</div>
+        <div class="actions">
           <button class="ghost" onclick="event.stopPropagation(); printProductLabel('${p.id}')">🏷️ Etiqueta</button>
           <button class="secondary" onclick="event.stopPropagation(); abrirEdit('${p.id}')">Editar</button>
           <button class="danger" onclick="event.stopPropagation(); excluirProduto('${p.id}')">Excluir</button>
@@ -2564,4 +2381,6 @@ highlightDrawer(state.mobileView);
 
 </body>
 </html>
+
+
 
