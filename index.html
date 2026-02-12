@@ -122,7 +122,48 @@
   .kpi .label{ color:var(--muted); font-size:12px; }
   .kpi .value{ font-size:22px; font-weight:900; margin-top:6px; }
 
-  .productsGrid{ margin-top:14px; display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px; }
+  /* ================== RESPONSIVE GRID ================== */
+  .productsGrid{
+    display:grid;
+    gap:12px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  @media (max-width: 480px){
+    .productsGrid{
+      grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+      gap: 8px !important;
+    }
+    .productsGrid .meta .mono:last-child{
+      font-size: 8px;
+      display: block;
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .productsGrid .cardBody{
+      padding: 8px;
+    }
+    
+    .productsGrid .title{
+      font-size: 11px;
+      line-height: 1.2;
+    }
+    
+    .productsGrid .meta{
+      font-size: 9px;
+    }
+    
+    .productsGrid .stock{
+      margin-top: 6px;
+    }
+    
+    .productsGrid .hint{
+      font-size: 8px;
+    }
+  }
+
   .card{ background:#fff; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
   .cardImg{ height:160px; background:#e9eef5; overflow:hidden; }
   .cardImg img{ width:100%; height:100%; object-fit:cover; display:block; }
@@ -293,14 +334,35 @@
     .productsGrid{ grid-template-columns:1fr; }
   }
 
-  @media (max-width: 760px){
-    .productsGrid.compact5 .meta .mono:last-child{
+  @media (max-width: 480px){
+    .productsGrid .meta .mono:last-child{
       font-size: 8px;
       display: block;
       margin-top: 2px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+    
+    .productsGrid .cardBody{
+      padding: 8px;
+    }
+    
+    .productsGrid .title{
+      font-size: 11px;
+      line-height: 1.2;
+    }
+    
+    .productsGrid .meta{
+      font-size: 9px;
+    }
+    
+    .productsGrid .stock{
+      margin-top: 6px;
+    }
+    
+    .productsGrid .hint{
+      font-size: 8px;
     }
   }
 
@@ -393,7 +455,6 @@
     .productsGrid.compact5 .title{
       font-size: 12px !important;
       line-height: 1.1;
-      margin: 0;
     }
     .productsGrid.compact5 .meta,
     .productsGrid.compact5 .stock,
@@ -1506,7 +1567,6 @@ function aplicarLayoutMobile(){
     if(lista) lista.style.display = "grid";
     if(dash) dash.style.display = "block";
 
-    if(lista) lista.classList.remove("compact5");
     setTab("estoque");
     toggleDrawer(false);
   }
@@ -1514,9 +1574,6 @@ function aplicarLayoutMobile(){
 window.addEventListener("resize", aplicarLayoutMobile);
 
 /* ================== ITENS COMPACTOS + MODAL ITEM ================== */
-function isMobileItensView(){
-  return isMobile() && (state.mobileView === "itens");
-}
 function abrirItemModal(id){
   const p = state.produtos.find(x=>x.id===id);
   if(!p) return;
@@ -2139,25 +2196,16 @@ function atualizarTudo(){
 /* ================== RENDER PRODUTOS ================== */
 function renderProdutos(){
   const termo = normLower(document.getElementById("busca").value);
-  const filtroCat = normLower(document.getElementById("filtroCategoria").value);
-  const filtroLocal = normLower(document.getElementById("filtroLocal").value);
+  const catFiltro = norm(document.getElementById("filtroCategoria").value);
+  const localFiltro = norm(document.getElementById("filtroLocal").value);
 
-  let lista = state.produtos.slice();
+  let lista = state.produtos.filter(p=>{
 
-  if(filtroLocal){
-    lista = lista.filter(p => (p.localizacao || "").toLowerCase().includes(filtroLocal));
-  }
-  if(filtroCat){
-    lista = lista.filter(p => (p.categoria||"").toLowerCase().includes(filtroCat));
-  }
-  if(termo){
-    lista = lista.filter(p=>{
-      const s = `${p.id} ${p.nome} ${p.categoria} ${p.localizacao}`.toLowerCase();
-      return s.includes(termo);
-    });
-  }
-
-  lista.sort((a,b)=>{
+    const matchBusca = !termo || normLower(p.nome).includes(termo) || normLower(p.id).includes(termo) || normLower(p.barcode || "").includes(termo);
+    const matchCat = !catFiltro || p.categoria === catFiltro;
+    const matchLocal = !localFiltro || (p.localizacao && normLower(p.localizacao).includes(normLower(localFiltro)));
+    return matchBusca && matchCat && matchLocal;
+  }).sort((a,b)=>{
     const c = (a.categoria||"").localeCompare(b.categoria||"");
     if(c!==0) return c;
     return (a.nome||"").localeCompare(b.nome||"");
@@ -2165,20 +2213,18 @@ function renderProdutos(){
 
   document.getElementById("contador").textContent = `Mostrando ${lista.length} de ${state.produtos.length} produto(s).`;
 
-  const grid = document.getElementById("lista");
-  if(grid){
-    grid.classList.toggle("compact5", isMobileItensView());
-  }
+  const el = document.getElementById("lista");
+  if(!el) return;
 
-  document.getElementById("lista").innerHTML = lista.map(p=>`
-    <div class="card" ${isMobileItensView() ? `onclick="abrirItemModal('${p.id}')"` : ""}>
+  el.className = "productsGrid";
+  el.innerHTML = lista.map(p=>`
+    <div class="card" onclick="abrirItemModal('${p.id}')">
       <div class="cardImg"><img src="${p.imagemBase64 || placeholderImg()}" alt="${escapeHtml(p.nome)}"></div>
       <div class="cardBody">
         <h4 class="title">${escapeHtml(p.nome)}</h4>
         <div class="meta">
           <span class="badge">${escapeHtml(p.categoria)}</span>
           <span class="mono">${escapeHtml(p.id)}</span>
-          <span class="mono" style="font-size:10px; color:#666;">Cód: ${escapeHtml(p.barcode || p.id)}</span>
         </div>
         <div class="meta">
           <span>Unidade: ${escapeHtml(unidadeParaExibirProduto(p))}</span>
@@ -2191,13 +2237,9 @@ function renderProdutos(){
             <div class="hint" style="margin-top:0">Estoque</div>
             <strong>${formatNumber(p.estoque)} ${escapeHtml(unidadeParaExibirProduto(p))}</strong>
           </div>
-          <div class="row" style="gap:8px">
-            <button class="ghost" onclick="event.stopPropagation(); entradaEstoque('${p.id}')">+ Entrada</button>
-            <button class="ghost" onclick="event.stopPropagation(); saidaEstoque('${p.id}')">- Saída</button>
-          </div>
         </div>
 
-        <div class="actions">
+        <div class="hint" style="margin-top:6px;">Atualizado: ${escapeHtml(p.updatedAt || "-")}</div>
           <button class="ghost" onclick="event.stopPropagation(); printProductLabel('${p.id}')">🏷️ Etiqueta</button>
           <button class="secondary" onclick="event.stopPropagation(); abrirEdit('${p.id}')">Editar</button>
           <button class="danger" onclick="event.stopPropagation(); excluirProduto('${p.id}')">Excluir</button>
