@@ -131,60 +131,65 @@
   @media (max-width: 480px){
     .productsGrid{
       grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-      gap: 8px !important;
+      gap: 6px !important;
     }
     .productsGrid .cardImg{
-      height: 35px !important;
+      height: 25px !important;
     }
     .productsGrid .cardBody{
-      padding: 4px !important;
+      padding: 3px !important;
     }
     .productsGrid .title{
-      font-size: 9px !important;
+      font-size: 8px !important;
       line-height: 1.0 !important;
       margin: 0 0 1px 0 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
     }
     .productsGrid .meta{
-      font-size: 7px !important;
+      font-size: 6px !important;
       margin-top: 1px !important;
-      gap: 2px !important;
+      gap: 1px !important;
+      flex-wrap: nowrap !important;
     }
     .productsGrid .badge{
-      font-size: 6px !important;
-      padding: 1px 3px !important;
+      font-size: 5px !important;
+      padding: 1px 2px !important;
     }
     .productsGrid .mono{
-      font-size: 6px !important;
+      font-size: 5px !important;
     }
     .productsGrid .meta .mono:last-child{
-      font-size: 6px !important;
+      font-size: 5px !important;
       display: block !important;
-      margin-top: 1px !important;
+      margin-top: 0px !important;
       overflow: hidden !important;
       text-overflow: ellipsis !important;
       white-space: nowrap !important;
     }
     .productsGrid .stock{
-      margin-top: 2px !important;
-      padding: 2px !important;
-      gap: 2px !important;
+      margin-top: 1px !important;
+      padding: 1px !important;
+      gap: 1px !important;
     }
     .productsGrid .stock strong{
-      font-size: 8px !important;
+      font-size: 7px !important;
     }
     .productsGrid .hint{
-      font-size: 6px !important;
-      margin-top: 1px !important;
+      font-size: 5px !important;
+      margin-top: 0px !important;
+      display: none !important;
     }
     .productsGrid .actions{
-      margin-top: 2px !important;
+      margin-top: 1px !important;
       gap: 1px !important;
     }
     .productsGrid .actions button{
-      font-size: 6px !important;
-      padding: 2px 4px !important;
-      min-width: 40px !important;
-      min-height: 18px !important;
+      font-size: 5px !important;
+      padding: 1px 2px !important;
+      min-width: 35px !important;
+      min-height: 15px !important;
     }
   }
 
@@ -2557,4 +2562,5 @@ highlightDrawer(state.mobileView);
 
 </body>
 </html>
+
 
