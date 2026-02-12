@@ -293,6 +293,21 @@
     .productsGrid{ grid-template-columns:1fr; }
   }
 
+  @media (max-width: 760px){
+    .productsGrid.compact5 .barcodeDisplay{
+      transform: scale(0.6);
+      margin: 4px 0;
+      padding: 2px;
+    }
+    .productsGrid.compact5 .barcodeDisplay div:first-child{
+      transform: scale(0.5);
+    }
+    .productsGrid.compact5 .barcodeDisplay div:last-child{
+      font-size: 7px;
+      margin-top: 1px;
+    }
+  }
+
   /* ================== PRINT LABEL STYLES ================== */
   @media print {
     body * {
@@ -821,7 +836,15 @@
 
 <script>
 /* ================== BARCODE GENERATOR ================== */
+// Cache for generated barcodes to improve performance
+const barcodeCache = new Map();
+
 function generateCode39Barcode(text) {
+  // Check cache first
+  if (barcodeCache.has(text)) {
+    return barcodeCache.get(text);
+  }
+  
   const CODE39_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-.$/+%';
   const CODE39_PATTERNS = {
     '0': '101001101101', '1': '110100101011', '2': '101100101011', '3': '110110010101',
@@ -869,6 +892,9 @@ function generateCode39Barcode(text) {
   svg += `<text x="${svgWidth/2}" y="${svgHeight - 2}" text-anchor="middle" font-family="monospace" font-size="12" fill="black">${cleanText}</text>`;
   svg += '</svg>';
   
+  // Cache the result
+  barcodeCache.set(text, svg);
+  
   return svg;
 }
 
@@ -882,23 +908,25 @@ function printProductLabel(productId) {
   // Create print container with proper styling
   const printContainer = document.getElementById('printContainer');
   printContainer.innerHTML = `
-    <div style="width: 65mm; height: 30mm; padding: 2mm; font-family: Arial, sans-serif; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between;">
+    <div style="width: 65mm; height: 30mm; padding: 2mm; font-family: Arial, sans-serif; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; background: white;">
       <div style="font-weight: bold; font-size: 8px; margin-bottom: 1mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(product.nome)}</div>
       <div style="font-size: 6px; color: #666; margin-bottom: 1mm;">${escapeHtml(product.categoria || '')}</div>
       <div style="font-size: 6px; margin-bottom: 1mm;">ID: ${escapeHtml(product.id)}</div>
       <div style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 12mm;">
-        ${barcodeSvg}
+        <div style="transform:scale(0.8); transform-origin:center;">${barcodeSvg}</div>
       </div>
+      <div style="font-size: 5px; text-align: center; font-family: monospace; color: #333; margin-top: 1mm;">${escapeHtml(product.barcode || product.id)}</div>
     </div>
   `;
   
-  // Trigger print
-  window.print();
-  
-  // Clear container after printing
+  // Small delay to ensure content is rendered before print dialog
   setTimeout(() => {
-    printContainer.innerHTML = '';
-  }, 100);
+    window.print();
+    // Clear container after printing
+    setTimeout(() => {
+      printContainer.innerHTML = '';
+    }, 100);
+  }, 50);
 }
 
 /* ================== BARCODE SCANNER ================== */
@@ -1019,6 +1047,7 @@ function hideScannerStatus() {
 }
 
 function buscarPorCodigoDeBarras(codigo) {
+  // Only search within the site's products (local database)
   const product = state.produtos.find(p => 
     (p.barcode && p.barcode === codigo) || p.id === codigo
   );
@@ -1043,7 +1072,7 @@ function buscarPorCodigoDeBarras(codigo) {
       }, 100);
     }
   } else {
-    showScannerStatus(`Produto não encontrado: ${codigo}`, 'error');
+    showScannerStatus(`Código não pertence a este sistema`, 'error');
   }
 }
 
@@ -2068,7 +2097,10 @@ function renderProdutos(){
         <div class="meta">
           <span class="badge">${escapeHtml(p.categoria)}</span>
           <span class="mono">${escapeHtml(p.id)}</span>
-          <span class="mono" style="font-size:10px; color:#666;">Cód: ${escapeHtml(p.barcode || p.id)}</span>
+        </div>
+        <div class="barcodeDisplay" style="text-align:center; margin:8px 0; padding:4px; background:#f9fafb; border-radius:6px;">
+          <div style="transform:scale(0.8); transform-origin:center; max-width:100%; overflow:hidden;">${generateCode39Barcode(p.barcode || p.id)}</div>
+          <div style="font-size:9px; font-family:monospace; color:#666; margin-top:2px;">${escapeHtml(p.barcode || p.id)}</div>
         </div>
         <div class="meta">
           <span>Unidade: ${escapeHtml(unidadeParaExibirProduto(p))}</span>
@@ -2381,3 +2413,4 @@ highlightDrawer(state.mobileView);
 
 </body>
 </html>
+
