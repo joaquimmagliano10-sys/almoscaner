@@ -133,34 +133,58 @@
       grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
       gap: 8px !important;
     }
-    .productsGrid .meta .mono:last-child{
-      font-size: 8px;
-      display: block;
-      margin-top: 2px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    .productsGrid .cardImg{
+      height: 50px !important;
     }
-    
     .productsGrid .cardBody{
-      padding: 8px;
+      padding: 6px !important;
     }
-    
     .productsGrid .title{
-      font-size: 11px;
-      line-height: 1.2;
+      font-size: 10px !important;
+      line-height: 1.1 !important;
+      margin: 0 0 2px 0 !important;
     }
-    
     .productsGrid .meta{
-      font-size: 9px;
+      font-size: 8px !important;
+      margin-top: 2px !important;
+      gap: 4px !important;
     }
-    
+    .productsGrid .badge{
+      font-size: 7px !important;
+      padding: 2px 4px !important;
+    }
+    .productsGrid .mono{
+      font-size: 7px !important;
+    }
+    .productsGrid .meta .mono:last-child{
+      font-size: 7px !important;
+      display: block !important;
+      margin-top: 1px !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+    }
     .productsGrid .stock{
-      margin-top: 6px;
+      margin-top: 4px !important;
+      padding: 4px !important;
+      gap: 4px !important;
     }
-    
+    .productsGrid .stock strong{
+      font-size: 9px !important;
+    }
     .productsGrid .hint{
-      font-size: 8px;
+      font-size: 7px !important;
+      margin-top: 2px !important;
+    }
+    .productsGrid .actions{
+      margin-top: 4px !important;
+      gap: 2px !important;
+    }
+    .productsGrid .actions button{
+      font-size: 7px !important;
+      padding: 4px 6px !important;
+      min-width: 50px !important;
+      min-height: 24px !important;
     }
   }
 
@@ -2533,5 +2557,4 @@ highlightDrawer(state.mobileView);
 
 </body>
 </html>
-
 
